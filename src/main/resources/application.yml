@@ -12,13 +12,15 @@ jwt:
     tokenHead: Bearer
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/habit_developer
+    url: jdbc:mysql://localhost:3306/habit_developer?&allowMultiQueries=true
     username: root
     password: zsh
     driver-class-name: com.mysql.cj.jdbc.Driver
+
 
 
 mybatis:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: true
+

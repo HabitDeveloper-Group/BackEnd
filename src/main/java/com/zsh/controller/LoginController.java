@@ -16,7 +16,7 @@ public class LoginController {
 
     /**
      * 响应用户名判重请求
-     * @return
+     * @return 统一数据格式
      */
     @GetMapping("/user/register")
     public Result userNameCheckExisted(String username){
