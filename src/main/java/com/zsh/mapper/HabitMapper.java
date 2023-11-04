@@ -185,4 +185,22 @@ public interface HabitMapper {
 
 //    @Select("select finished_all from tb_date_records where date between #{begin} and #{end} and user_id = #{userId}")
     List<Integer> getFinishedRecordsInWeek(@Param("begin") Date begin,@Param("end") Date end, @Param("userId") Integer userId);
+
+    /**
+     * 查询tb_habit_records:查询某用户某习惯的坚持天数
+     * @param habitId 习惯id
+     * @param userId 用户id
+     * @return 坚持天数
+     */
+    @Select("select count(*) from tb_habit_records where user_id = #{userId} and habit_id = #{habitId} ")
+    Integer getFinishedTimesByHabitId(Integer habitId , Integer userId );
+
+    /**
+     * 查询tb_habits:根据id查询指定习惯信息
+     * @param habitId 习惯id
+     * @return habit对象
+     */
+    @Select("select habit_id, habit_name, icon, tag, description, earliest_time, latest_time, lower_limit,added_time,has_done_times " +
+            "from tb_habits where habit_id = #{habitId}")
+    Habit getHabitById(Integer habitId);
 }

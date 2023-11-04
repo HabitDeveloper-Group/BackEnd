@@ -67,4 +67,12 @@ public interface HabitService {
      * @return 统一数据格式
      */
     Result analyse(Date begin, Date end);
+
+
+    /**
+     * 查询指定id的习惯信息
+     * @param habitId
+     * @return
+     */
+    Result get(Integer habitId);
 }

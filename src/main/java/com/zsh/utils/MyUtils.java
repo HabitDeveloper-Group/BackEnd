@@ -2,6 +2,8 @@ package com.zsh.utils;
 
 import java.sql.Date;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static java.lang.Math.max;
 
@@ -37,4 +39,16 @@ public class MyUtils {
         return res;
 
     }
+    // 工具方法
+    public static <T> Consumer<T> consumerWithIndex(BiConsumer<T, Integer> consumer) {
+        class Obj {
+            int i;
+        }
+        Obj obj = new Obj();
+        return t -> {
+            int index = obj.i++;
+            consumer.accept(t, index);
+        };
+    }
+
 }

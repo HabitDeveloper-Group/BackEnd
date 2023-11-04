@@ -1,6 +1,8 @@
 package com.zsh;
 
 import com.zsh.mapper.HabitMapper;
+import com.zsh.mapper.IconMapper;
+import com.zsh.mapper.QuoteMapper;
 import com.zsh.mapper.UserMapper;
 import com.zsh.pojo.User;
 import com.zsh.utils.MyUtils;
@@ -26,6 +28,11 @@ class HabitDeveloperApplicationTests {
     @Autowired
     private HabitMapper habitMapper;
     private BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private IconMapper iconMapper;
+    @Autowired
+    private QuoteMapper quoteMapper;
+
     @Test
     public void testUserMapper(){
         List<User> users = userMapper.selectList();
@@ -92,4 +99,26 @@ class HabitDeveloperApplicationTests {
         System.out.println(records);
         System.out.println(MyUtils.getMaxConsecutiveOnes(records));
     }
+
+    @Test
+    public void testListIcons(){
+        List<String> list = iconMapper.list();
+        System.out.println(list);
+    }
+
+    @Test
+    public void testListQuotes(){
+        List<HashMap<String, String>> list = quoteMapper.list();
+        System.out.println(list);
+    }
+
+    @Test
+    public void testCheckExistedUserName(){
+        User user1 = userMapper.selectByUserName("zsh");
+        User user2 = userMapper.selectByUserName("wwww");
+        System.out.println(user1);
+        System.out.println(user2);;
+    }
+
+
 }

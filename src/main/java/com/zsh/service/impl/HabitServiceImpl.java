@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -32,7 +33,7 @@ public class HabitServiceImpl implements HabitService {
         Integer userId = loginUser.getUser().getUserId();
         //调用Mapper层接口查询数据库
         List<Habit> list = habitMapper.selectNotFinished(userId);
-        HashMap<String,Object> res = packageIntoMap(list);
+        HashMap<String,Object> res = packageIntoMap(list,userId);
         return Result.success(res);
 
     }
@@ -44,7 +45,7 @@ public class HabitServiceImpl implements HabitService {
         //    获得当前登录用户的id
         Integer userId = loginUser.getUser().getUserId();
         List<Habit> list = habitMapper.selectHasFinished(userId);
-        HashMap<String,Object> res = packageIntoMap(list);
+        HashMap<String,Object> res = packageIntoMap(list,userId);
         return Result.success(res);
 
 
@@ -57,7 +58,7 @@ public class HabitServiceImpl implements HabitService {
         //    获得当前登录用户的id
         Integer userId = loginUser.getUser().getUserId();
         List<Habit> list = habitMapper.selectHasFailed(userId);
-        HashMap<String,Object> res = packageIntoMap(list);
+        HashMap<String,Object> res = packageIntoMap(list,userId);
         return Result.success(res);
     }
 
@@ -107,9 +108,10 @@ public class HabitServiceImpl implements HabitService {
         LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Integer userId = loginUser.getUser().getUserId();
         List<Habit>list =  habitMapper.listHabits(userId);
-        return Result.success(packageIntoMap(list));
+        return Result.success(packageIntoMap(list,userId));
     }
 
+    @Transactional
     @Override
     public Result delete(Integer habitId) {
         LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -127,6 +129,7 @@ public class HabitServiceImpl implements HabitService {
         return Result.success();
     }
 
+    @Transactional
     @Override
     public Result update(Habit habit) {
         LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -142,6 +145,7 @@ public class HabitServiceImpl implements HabitService {
         return Result.success();
     }
 
+    @Transactional
     @Override
     public Result analyse(Date begin, Date end) {
         LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -176,16 +180,31 @@ public class HabitServiceImpl implements HabitService {
         return Result.success(data);
     }
 
+    @Override
+    public Result get(Integer habitId) {
+        Habit habit = habitMapper.getHabitById(habitId);
+        return Result.success(habit);
+    }
+
+
     /**
      * 将查询到的列表封装成响应数据
      * @param list 带封装的数据列表
      * @return 封装好的HashMap
      */
-    private HashMap<String, Object> packageIntoMap(List<Habit>list){
+    private HashMap<String, Object> packageIntoMap(List<Habit>list, Integer userId){
         Integer total = list.size();
+        List<HashMap<String,Object>>rows  = new ArrayList<>();
         HashMap<String,Object> res = new HashMap<>();
+        list.stream().forEach(habit -> {
+            HashMap<String,Object> item = new HashMap<>();
+            item.put("habit",habit);
+            Integer finishedDays = habitMapper.getFinishedTimesByHabitId(habit.getHabitId(), userId);
+            item.put("finishedDays",finishedDays);
+            rows.add(item);
+        });
         res.put("total",total);
-        res.put("rows",list);
+        res.put("rows",rows);
         return res;
     }
 

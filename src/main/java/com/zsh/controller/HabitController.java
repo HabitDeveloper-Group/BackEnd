@@ -3,6 +3,7 @@ package com.zsh.controller;
 import com.zsh.pojo.Habit;
 import com.zsh.pojo.Result;
 import com.zsh.service.HabitService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.annotations.Delete;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -104,5 +105,12 @@ public class HabitController {
     {
         return habitService.analyse(begin, end);
     }
+
+
+    @GetMapping("/habits/{habitId}")
+    public Result get(@PathVariable Integer habitId){
+        return habitService.get(habitId);
+    }
+
 
 }

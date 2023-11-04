@@ -80,7 +80,7 @@ public class LoginServiceImpl implements LoginService {
             return Result.success();
         }
         else{
-            return Result.error("error");
+            return Result.error("用户名已经存在！");
         }
     }
 
