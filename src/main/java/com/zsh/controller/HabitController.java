@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.sql.Date;
 
+@Slf4j
 @RestController
 public class HabitController {
     @Autowired
@@ -21,6 +22,7 @@ public class HabitController {
      */
     @GetMapping("/home")
     public Result selectNotFinished(){
+        log.info("查询未完成的习惯");
         return  habitService.selectNotFinished();
     }
 
@@ -30,6 +32,7 @@ public class HabitController {
      */
     @GetMapping("/home/hasFinished")
     public Result selectHasFinished(){
+        log.info("查询已完成的习惯");
         return habitService.selectHasFinished();
     }
 
@@ -39,6 +42,7 @@ public class HabitController {
      */
     @GetMapping("/home/hasFailed")
     public Result selectHasFailed(){
+        log.info("查询已失败的习惯");
         return habitService.selectHasFailed();
     }
 
@@ -49,6 +53,7 @@ public class HabitController {
      */
     @PostMapping("/home/{habitId}")
     public Result checkIn(@PathVariable Integer habitId){
+        log.info("打卡习惯:{}",habitId);
         return habitService.checkIn(habitId);
     }
 
@@ -59,6 +64,7 @@ public class HabitController {
      */
     @PostMapping("/habits")
     public Result addHabit(@RequestBody Habit habit){
+        log.info("添加习惯:{}",habit.getHabitName());
         return habitService.addHabit(habit);
     }
 
@@ -69,6 +75,7 @@ public class HabitController {
     @GetMapping("/habits")
     public Result list()
     {
+        log.info("列举所有习惯");
         return habitService.list();
     }
 
@@ -80,6 +87,7 @@ public class HabitController {
     @DeleteMapping("/habits/{habitId}")
     public Result delete(@PathVariable Integer habitId)
     {
+        log.info("删除习惯：{}",habitId);
         return habitService.delete(habitId);
     }
 
@@ -91,6 +99,7 @@ public class HabitController {
     @PutMapping("/habits")
     public Result update(@RequestBody Habit habit)
     {
+        log.info("修改习惯:{}",habit.getHabitName());
         return habitService.update(habit);
     }
 
@@ -103,12 +112,14 @@ public class HabitController {
     @GetMapping("/analysis")
     public Result analyse(Date begin, Date end)
     {
+        log.info("分析数据");
         return habitService.analyse(begin, end);
     }
 
 
     @GetMapping("/habits/{habitId}")
     public Result get(@PathVariable Integer habitId){
+        log.info("查询习惯:{}",habitId);
         return habitService.get(habitId);
     }
 

@@ -90,13 +90,16 @@ public class HabitServiceImpl implements HabitService {
 
     @Override
     public Result addHabit(Habit habit) {
+        //首先检查开始时间与结束时间是否合法
+        checkValidOfTime(habit);
         LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Integer userId = loginUser.getUser().getUserId();
+
         try {
             habit.setAddedTime(LocalDate.now());
             habitMapper.insertHabit(habit, userId);
         } catch (Exception e) {
-            throw new RuntimeException("添加失败!请检查该习惯是否已经存在!");
+            throw new RuntimeException("添加失败!"+"已经存在一个习惯名为:"+habit.getHabitName());
         }
         // 重新检查今日是否完成全部习惯
         checkFinishedAll(userId);
@@ -132,6 +135,7 @@ public class HabitServiceImpl implements HabitService {
     @Transactional
     @Override
     public Result update(Habit habit) {
+        checkValidOfTime(habit);
         LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Integer userId = loginUser.getUser().getUserId();
         try {
@@ -232,13 +236,13 @@ public class HabitServiceImpl implements HabitService {
     private void checkFinishedAll(Integer userId){
         // 通过用户id查询tb_habits表，查询未完成习惯数量
         Integer notFinishedNum = habitMapper.getNotFinishedNumByUserId(userId);
-        log.info("未完成的习惯数量为：{}",notFinishedNum);
+//        log.info("未完成的习惯数量为：{}",notFinishedNum);
         if(notFinishedNum == 0){   //全部完成,更新tb_date_records
-            log.info("将当天hasFinishedAll置1");
+//            log.info("将当天hasFinishedAll置1");
             habitMapper.updateDateRecord(userId,1);
         }
         else{
-            log.info("将当天hasFinishedAll置0");
+//            log.info("将当天hasFinishedAll置0");
             habitMapper.updateDateRecord(userId,0);
         }
 
@@ -271,6 +275,12 @@ public class HabitServiceImpl implements HabitService {
         });
 
         return rows;
+    }
+    private void checkValidOfTime(Habit habit){
+        System.out.println(habit);
+        if(habit.getEarliestTime().isAfter(habit.getLatestTime())){
+            throw new RuntimeException("操作失败，请检查开始时间与结束时间是否合法!");
+        }
     }
 
 

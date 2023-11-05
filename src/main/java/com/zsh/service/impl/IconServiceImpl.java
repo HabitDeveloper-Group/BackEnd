@@ -26,7 +26,7 @@ public class IconServiceImpl implements IconService {
         iconUrls.stream().forEach(MyUtils.consumerWithIndex((url, index)->{
             HashMap<String, Object> item = new HashMap<>();
             item.put("v", index);
-            item.put("icon",url);
+            item.put("content",url);
             arr.add(item);
         }));
         //最后封装data数据，{"total":2,"arr":[....]}
