@@ -2,6 +2,7 @@ package com.zsh.utils;
 
 import java.sql.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -23,6 +24,10 @@ public class MyUtils {
      * @return
      */
     public static Integer getMaxConsecutiveOnes(List<Integer> list){
+        if(Objects.isNull(list) || list.isEmpty()){
+            return 0;
+        }
+        System.out.println("当周完成记录:"+list);
         //首先获得时间段内的每天的完成与否列表
         final Integer length = list.size();
         int[] f = new int[length];
@@ -36,6 +41,7 @@ public class MyUtils {
                 res = max(res, f[i]);
             }
         }
+        res = max(res, f[0]);
         return res;
 
     }

@@ -6,12 +6,14 @@ import com.zsh.service.HabitService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.annotations.Delete;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Date;
 
 @Slf4j
 @RestController
+@Lazy
 public class HabitController {
     @Autowired
     private HabitService habitService;
@@ -112,7 +114,7 @@ public class HabitController {
     @GetMapping("/analysis")
     public Result analyse(Date begin, Date end)
     {
-        log.info("分析数据");
+        log.info("分析数据:{}",begin);
         return habitService.analyse(begin, end);
     }
 

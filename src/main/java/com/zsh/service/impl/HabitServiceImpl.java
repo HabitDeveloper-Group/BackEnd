@@ -7,45 +7,49 @@ import com.zsh.service.HabitService;
 import com.zsh.utils.MyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Date;
 import java.sql.Time;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 
 import static java.lang.Math.max;
 
+@Lazy
 @Slf4j
 @Service
 public class HabitServiceImpl implements HabitService {
     @Autowired
     private HabitMapper habitMapper;
+    private Integer userId;
+
+    public HabitServiceImpl(){
+
+        LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        this.userId = loginUser.getUser().getUserId();
+//        log.info("构造函数调用了，userId为:{}",userId);
+
+    }
     //TODO 如何复用用户认证信息
     @Override
     public Result selectNotFinished() {
-        //    获得用户认证信息
-        LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        //    获得当前登录用户的id
-        Integer userId = loginUser.getUser().getUserId();
         //调用Mapper层接口查询数据库
         List<Habit> list = habitMapper.selectNotFinished(userId);
-        HashMap<String,Object> res = packageIntoMap(list,userId);
+        HashMap<String,Object> res = packageIntoMap(list);
         return Result.success(res);
 
     }
 
     @Override
     public Result selectHasFinished() {
-        //    获得用户认证信息
-        LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        //    获得当前登录用户的id
-        Integer userId = loginUser.getUser().getUserId();
         List<Habit> list = habitMapper.selectHasFinished(userId);
-        HashMap<String,Object> res = packageIntoMap(list,userId);
+        HashMap<String,Object> res = packageIntoMap(list);
         return Result.success(res);
 
 
@@ -53,20 +57,15 @@ public class HabitServiceImpl implements HabitService {
 
     @Override
     public Result selectHasFailed() {
-        //    获得用户认证信息
-        LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        //    获得当前登录用户的id
-        Integer userId = loginUser.getUser().getUserId();
         List<Habit> list = habitMapper.selectHasFailed(userId);
-        HashMap<String,Object> res = packageIntoMap(list,userId);
+        HashMap<String,Object> res = packageIntoMap(list);
         return Result.success(res);
     }
 
+    @Transactional
     @Override
     public Result checkIn(Integer habitId) {
         //TODO 添加事务
-        LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Integer userId = loginUser.getUser().getUserId();
         //首先要判断是否在打卡时间限制之内
         HashMap<String, Time> timeSection =  habitMapper.getTimeSection(habitId);
         System.out.println(timeSection);
@@ -79,9 +78,9 @@ public class HabitServiceImpl implements HabitService {
         habitMapper.updateHasDoneTimesById(habitId);
         try {
             //检查该习惯是否完成
-            checkFinished(habitId,userId);
+            checkFinished(habitId);
             //检查是否完成当日全部习惯
-            checkFinishedAll(userId);
+            checkFinishedAll();
         } catch (Exception e) {
             throw new RuntimeException("用户打卡时更新数据库时出错");
         }
@@ -92,9 +91,6 @@ public class HabitServiceImpl implements HabitService {
     public Result addHabit(Habit habit) {
         //首先检查开始时间与结束时间是否合法
         checkValidOfTime(habit);
-        LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Integer userId = loginUser.getUser().getUserId();
-
         try {
             habit.setAddedTime(LocalDate.now());
             habitMapper.insertHabit(habit, userId);
@@ -102,23 +98,19 @@ public class HabitServiceImpl implements HabitService {
             throw new RuntimeException("添加失败!"+"已经存在一个习惯名为:"+habit.getHabitName());
         }
         // 重新检查今日是否完成全部习惯
-        checkFinishedAll(userId);
+        checkFinishedAll();
         return Result.success();
     }
 
     @Override
     public Result list() {
-        LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Integer userId = loginUser.getUser().getUserId();
         List<Habit>list =  habitMapper.listHabits(userId);
-        return Result.success(packageIntoMap(list,userId));
+        return Result.success(packageIntoMap(list));
     }
 
     @Transactional
     @Override
     public Result delete(Integer habitId) {
-        LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Integer userId = loginUser.getUser().getUserId();
         try {
             //删除tb_habits中的数据
             habitMapper.deleteHabit(habitId,userId);
@@ -128,7 +120,7 @@ public class HabitServiceImpl implements HabitService {
         } catch (Exception e) {
             throw new RuntimeException("删除失败!");
         }
-        checkFinishedAll(userId);
+        checkFinishedAll();
         return Result.success();
     }
 
@@ -136,24 +128,20 @@ public class HabitServiceImpl implements HabitService {
     @Override
     public Result update(Habit habit) {
         checkValidOfTime(habit);
-        LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Integer userId = loginUser.getUser().getUserId();
         try {
             habitMapper.updateHabit(habit);
         } catch (Exception e) {
             throw new RuntimeException("修改失败!"+"已经存在一个习惯名为:"+habit.getHabitName());
         }
         //可能会修改打卡最低下限，因此会影响到是否完成习惯，和是否完成当天所有习惯
-        checkFinished(habit.getHabitId(),userId);
-        checkFinishedAll(userId);
+        checkFinished(habit.getHabitId());
+        checkFinishedAll();
         return Result.success();
     }
 
     @Transactional
     @Override
     public Result analyse(Date begin, Date end) {
-        LoginUser loginUser =(LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Integer userId = loginUser.getUser().getUserId();
         int timeLength = MyUtils.getDiffDays(end, begin)+1;
 //        获取rows
         List<Habit> habitList = habitMapper.listHabits(userId);          //首先查询所有习惯
@@ -162,16 +150,32 @@ public class HabitServiceImpl implements HabitService {
 //        计算finishingRate
         Integer countOfFinishedHabitsInWeek = habitMapper.getCountOfFinishedHabitsInWeek(begin, end, userId); //查询完成的习惯总数和总习惯数,并计算总完成数
         Integer countOfHabitsInWeek = habitMapper.getCountOfHabitsInWeek(begin, end, userId);
-        float finishingRate = (float) (countOfFinishedHabitsInWeek * 1.0 / countOfHabitsInWeek * 100);
+
+        DecimalFormat df = new DecimalFormat("#.00");
+        float finishingRate;
+        if(countOfFinishedHabitsInWeek == 0 || Objects.isNull(countOfHabitsInWeek)){
+            finishingRate = 0;
+        }
+        else {
+            finishingRate = (float) (countOfFinishedHabitsInWeek * 1.0 / countOfHabitsInWeek * 100);
+            finishingRate = Float.parseFloat(df.format(finishingRate));
+        }
         //查询完成全部任务的天数
         Integer perfectDays = habitMapper.getCountsOfPerfectDays(begin,end, userId);
+        if(Objects.isNull(perfectDays)){
+            perfectDays = 0;
+        }
 
 //        计算最大连续完美打卡的天数
         List<Integer> records = habitMapper.getFinishedRecordsInWeek(begin, end, userId);         //首先获得时间段内的每天的完成与否列表
         Integer maxConsecutiveDays = MyUtils.getMaxConsecutiveOnes(records);                    //调用工具类中实现的方法，获得list中最大大连续1的个数
 
 //        平均每天完成的习惯数量
-        float averagePerDay = (float) countOfFinishedHabitsInWeek / timeLength;
+        float averagePerDay = (float) countOfFinishedHabitsInWeek / Math.min(timeLength,MyUtils.getDiffDays(Date.valueOf(LocalDate.now()),begin));
+
+
+        averagePerDay = Float.parseFloat(df.format(averagePerDay));
+       // log.info("平均每天：{}",averagePerDay);
 
 //        封装数据并返回
         HashMap<String,Object> data = new HashMap<>();
@@ -196,7 +200,7 @@ public class HabitServiceImpl implements HabitService {
      * @param list 带封装的数据列表
      * @return 封装好的HashMap
      */
-    private HashMap<String, Object> packageIntoMap(List<Habit>list, Integer userId){
+    private HashMap<String, Object> packageIntoMap(List<Habit>list){
         Integer total = list.size();
         List<HashMap<String,Object>>rows  = new ArrayList<>();
         HashMap<String,Object> res = new HashMap<>();
@@ -216,9 +220,8 @@ public class HabitServiceImpl implements HabitService {
     /**
      * 检查用户是否完成该习惯，在打卡之后调用
      * @param habitId 习惯id
-     * @param userId 用户id
      */
-    private void checkFinished(Integer habitId, Integer userId){
+    private void checkFinished(Integer habitId){
         //查询该习惯的下限和已打卡次数，判断是否已完成该习惯
         Integer lowerLimit = habitMapper.getLowerLimitById(habitId);
         Integer hasDoneTimes = habitMapper.getHasDoneTimes(habitId);
@@ -231,9 +234,8 @@ public class HabitServiceImpl implements HabitService {
     /**
      * 检查用户是否已经完成当天的所有习惯，并更新tb_date_records表
      * 需要在打卡，添加习惯，删除，修改习惯时调用
-     * @param userId 用户id
      */
-    private void checkFinishedAll(Integer userId){
+    private void checkFinishedAll(){
         // 通过用户id查询tb_habits表，查询未完成习惯数量
         Integer notFinishedNum = habitMapper.getNotFinishedNumByUserId(userId);
 //        log.info("未完成的习惯数量为：{}",notFinishedNum);
